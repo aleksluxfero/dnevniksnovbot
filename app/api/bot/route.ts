@@ -1,5 +1,4 @@
-import { Bot } from "grammy";
-import { webhookCallback } from "grammy";
+import { Bot, webhookCallback } from "grammy";
 import { HfInference } from "@huggingface/inference";
 import { NextRequest } from "next/server";
 
@@ -43,23 +42,30 @@ bot.on("message:voice", async (ctx) => {
 
     await ctx.reply(`Твой текст: ${transcription.text}`);
   } catch (error) {
-    console.log(error);
+    console.error("Ошибка обработки голосового сообщения:", error);
     await ctx.reply("Упс, не смог обработать голосовое сообщение!");
   }
 });
 
-// Обработка текстовых сообщений (как в вашем примере)
+// Обработка текстовых сообщений
 bot.on("message:text", async (ctx) => {
   const chatId = ctx.chat.id;
   await ctx.reply(`Твой чат ID: ${chatId}`);
 });
 
-// Экспорт обработчика для Vercel
+// Обработка ошибок бота
+bot.catch((err) => {
+  console.error("Ошибка в боте:", err);
+});
+
+// Обработчик для Vercel
 export const POST = async (req: NextRequest) => {
   try {
-    return await webhookCallback(bot, "nextjs")(req);
+    // Используем адаптер "std/http" для совместимости с Next.js
+    const handler = webhookCallback(bot, "std/http");
+    return await handler(req);
   } catch (error) {
-    console.log(error);
+    console.error("Ошибка в webhookCallback:", error);
     return new Response("Ошибка сервера", { status: 500 });
   }
 };

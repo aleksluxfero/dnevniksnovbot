@@ -1,25 +1,28 @@
-import { Bot, webhookCallback } from "grammy";
-import { HfInference } from "@huggingface/inference";
-import { NextRequest } from "next/server";
+import { webhookCallback } from "grammy";
 
-// Настройки для Vercel
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
 
-// Инициализация бота и Hugging Face
+import { Bot } from "grammy";
+import { HfInference } from "@huggingface/inference";
 const token = process.env.TELEGRAM_BOT_TOKEN;
-if (!token) {
+
+if (!token)
   throw new Error("TELEGRAM_BOT_TOKEN environment variable not found.");
-}
 
 const bot = new Bot(token);
 const hf = new HfInference(process.env.HUGGINGFACE_API_TOKEN || "");
 
-// Команда /start
 bot.command("start", async (ctx) => {
   await ctx.reply(
-    "Привет! Я бот с Whisper на TypeScript. Отправь мне голосовое сообщение, и я преобразую его в текст!"
+    "Привет! Я ваш новый бот на грамми, написанный на TypeScript!",
   );
+});
+
+bot.on("message:text", async (ctx) => {
+  const chatId = ctx.chat.id;
+  // Отправляем сообщение обратно пользователю
+  await ctx.reply(`Ваш чат ID: ${chatId}`);
 });
 
 // Обработка голосовых сообщений с Whisper
@@ -47,25 +50,4 @@ bot.on("message:voice", async (ctx) => {
   }
 });
 
-// Обработка текстовых сообщений
-bot.on("message:text", async (ctx) => {
-  const chatId = ctx.chat.id;
-  await ctx.reply(`Твой чат ID: ${chatId}`);
-});
-
-// Обработка ошибок бота
-bot.catch((err) => {
-  console.error("Ошибка в боте:", err);
-});
-
-// Обработчик для Vercel
-export const POST = async (req: NextRequest) => {
-  try {
-    // Используем адаптер "std/http" для совместимости с Next.js
-    const handler = webhookCallback(bot, "std/http");
-    return await handler(req);
-  } catch (error) {
-    console.error("Ошибка в webhookCallback:", error);
-    return new Response("Ошибка сервера", { status: 500 });
-  }
-};
+export const POST = webhookCallback(bot, "std/http");

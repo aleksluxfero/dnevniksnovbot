@@ -10,7 +10,17 @@ const compat = new FlatCompat({
 });
 
 const eslintConfig = [
+  // Extend existing Next.js and TypeScript configs
   ...compat.extends("next/core-web-vitals", "next/typescript"),
+  // Add Prettier recommended config
+  ...compat.extends("plugin:prettier/recommended"),
+  // Add Prettier plugin and custom rule
+  {
+    plugins: ["prettier"],
+    rules: {
+      "prettier/prettier": "error",
+    },
+  },
 ];
 
 export default eslintConfig;

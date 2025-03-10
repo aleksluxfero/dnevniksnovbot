@@ -86,6 +86,7 @@ bot.on("message:voice", async (ctx) => {
           model: "perplexity-ai/r1-1776",
           messages: [{ role: "user", content: prompt }],
           max_tokens: 500,
+          provider: "fireworks-ai",
         });
         for await (const chunk of stream) {
           if (chunk.choices && chunk.choices.length > 0) {

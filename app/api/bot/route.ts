@@ -156,5 +156,5 @@ export async function getChatResponse(prompt: string) {
   }
   return out;
 }
-
+//тест
 export const POST = webhookCallback(bot, "std/http");

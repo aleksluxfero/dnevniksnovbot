@@ -85,9 +85,9 @@ bot.on("message:voice", async (ctx) => {
       async function getChatResponse(prompt: string) {
         let out = "";
         const stream = hf.chatCompletionStream({
-          model: "Qwen/QwQ-32B",
+          model: "deepseek-ai/DeepSeek-R1",
           messages: [{ role: "user", content: prompt }],
-          max_tokens: 500,
+          max_tokens: 2000,
           provider: "fireworks-ai",
         });
         for await (const chunk of stream) {

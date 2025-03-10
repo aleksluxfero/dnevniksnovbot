@@ -43,10 +43,15 @@ bot.on("message:voice", async (ctx) => {
       data: audioBuffer,
     });
 
-    await ctx.reply(`Твой текст: ${transcription.text}`);
+    // Отвечаем на конкретное голосовое сообщение
+    await ctx.reply(transcription.text, {
+      reply_to_message_id: ctx.message.message_id,
+    });
   } catch (error) {
     console.error("Ошибка обработки голосового сообщения:", error);
-    await ctx.reply("Упс, не смог обработать голосовое сообщение!");
+    await ctx.reply("Упс, не смог обработать голосовое сообщение!", {
+      reply_to_message_id: ctx.message.message_id,
+    });
   }
 });
 

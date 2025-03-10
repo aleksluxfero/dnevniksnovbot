@@ -11,7 +11,7 @@ if (!token)
   throw new Error("TELEGRAM_BOT_TOKEN environment variable not found.");
 
 const bot = new Bot(token);
-const hf = new HfInference(process.env.HUGGINGFACE_API_TOKEN || "");
+const hf = new HfInference(process.env.HUGGINGFACE_API_TOKEN2 || "");
 
 bot.command("start", async (ctx) => {
   await ctx.reply(

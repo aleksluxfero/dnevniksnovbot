@@ -111,6 +111,22 @@ bot.on("message:voice", async (ctx) => {
         prompt,
       );
 
+      async function getChatResponse(prompt: string) {
+        let out = "";
+        const stream = hf.chatCompletionStream({
+          model: "mistralai/Mixtral-8x7B-Instruct-v0.1",
+          messages: [{ role: "user", content: prompt }],
+          max_tokens: 500,
+        });
+        for await (const chunk of stream) {
+          if (chunk.choices && chunk.choices.length > 0) {
+            const newContent = chunk.choices[0].delta.content;
+            out += newContent;
+          }
+        }
+        return out;
+      }
+
       const response = await getChatResponse(prompt);
 
       console.log("Ответ от Mixtral-8x7B-Instruct:", response);
@@ -141,20 +157,4 @@ bot.on("message:voice", async (ctx) => {
   }
 });
 
-export async function getChatResponse(prompt: string) {
-  let out = "";
-  const stream = hf.chatCompletionStream({
-    model: "mistralai/Mixtral-8x7B-Instruct-v0.1",
-    messages: [{ role: "user", content: prompt }],
-    max_tokens: 500,
-  });
-  for await (const chunk of stream) {
-    if (chunk.choices && chunk.choices.length > 0) {
-      const newContent = chunk.choices[0].delta.content;
-      out += newContent;
-    }
-  }
-  return out;
-}
-//тест
 export const POST = webhookCallback(bot, "std/http");

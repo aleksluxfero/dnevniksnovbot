@@ -58,6 +58,7 @@ bot.on("message:text", async (ctx) => {
 // Обработка голосовых сообщений
 bot.on("message:voice", async (ctx) => {
   try {
+    // Получение файла
     const file = await ctx.getFile();
     if (file.file_size && file.file_size > 5 * 1024 * 1024) {
       await ctx.reply("Голосовое сообщение слишком большое (макс. 5 МБ)", {
@@ -71,47 +72,64 @@ bot.on("message:voice", async (ctx) => {
     const audioBuffer = await response.arrayBuffer();
 
     // Шаг 1: Расшифровка аудио
-    const transcription = await hf.automaticSpeechRecognition({
-      model: "openai/whisper-large-v3",
-      data: audioBuffer,
-    });
+    let transcription;
+    try {
+      transcription = await hf.automaticSpeechRecognition({
+        model: "openai/whisper-large-v3",
+        data: audioBuffer,
+      });
+    } catch (error) {
+      console.error("Ошибка расшифровки аудио:", error);
+      await ctx.reply("Не смог распознать голосовое сообщение!", {
+        reply_to_message_id: ctx.message.message_id,
+      });
+      return;
+    }
 
-    // Шаг 2: Генерация исправленного текста и тегов через DeepSeek-R1
-    const prompt = `
-      На основе следующего текста извлеки основные специфичные теги, исключая общие понятия вроде "сон", 
-      а также исправь потенциально неправильную расшифровку аудиосообщения, например, если в сообщении 
-      написано слово "пухаеш", а на самом деле должно быть "бухаешь". 
-      
-      Пример:
-      Текст: "Приснилось, что я пегаю по болю с единорогом"
-      Ответ:
-      Приснилось, что я бегаю по полю с единорогом.
-      #бег #поле #единорог
-      
-      Теперь обработай этот текст:
-      Текст: "${transcription.text}"
-      
-      Формат ответа должен быть строго таким, больше ничего лишнего:
-      [исправленный текст сообщения].
-      #тег1 #тег2 #тег3
-    `;
+    // Шаг 2: Генерация исправленного текста и тегов
+    let finalText = transcription.text; // По умолчанию отправляем только расшифровку
+    try {
+      const prompt = `
+        На основе следующего текста извлеки основные специфичные теги, исключая общие понятия вроде "сон", 
+        а также исправь потенциально неправильную расшифровку аудиосообщения, например, если в сообщении 
+        написано слово "пухаеш", а на самом деле должно быть "бухаешь". Не забывай, что это всего лишь сон, поэтому не нужно критично относится к написанному тексту. 
+        
+        Пример:
+        Текст: "Приснилось, что я пегаю по болю с единорогом"
+        Ответ:
+        Приснилось, что я бегаю по полю с единорогом.
+        #бег #поле #единорог
+        
+        Теперь обработай этот текст:
+        Текст: "${transcription.text}"
+        
+        Формат ответа должен быть строго таким, больше ничего лишнего:
+        [исправленный текст сообщения].
+        #тег1 #тег2 #тег3
+      `;
 
-    const deepSeekResponse = await hf.textGeneration({
-      model: "deepseek-ai/DeepSeek-R1",
-      inputs: prompt,
-      parameters: {
-        max_new_tokens: 100,
-        temperature: 0.7,
-      },
-    });
+      const deepSeekResponse = await hf.textGeneration({
+        model: "deepseek-ai/DeepSeek-R1",
+        inputs: prompt,
+        parameters: {
+          max_new_tokens: 100,
+          temperature: 0.7,
+        },
+      });
 
-    // Шаг 3: Отправка ответа напрямую
-    await ctx.reply(deepSeekResponse.generated_text, {
+      finalText = deepSeekResponse.generated_text; // Если成功, заменяем текст
+    } catch (error) {
+      console.error("Ошибка генерации текста и тегов:", error);
+      // Здесь не отправляем ошибку пользователю, а просто оставляем расшифровку
+    }
+
+    // Шаг 3: Отправка результата
+    await ctx.reply(finalText, {
       reply_to_message_id: ctx.message.message_id,
     });
   } catch (error) {
-    console.error("Ошибка обработки голосового сообщения:", error);
-    await ctx.reply("Упс, не смог обработать голосовое сообщение!", {
+    console.error("Общая ошибка обработки голосового сообщения:", error);
+    await ctx.reply("Упс, что-то пошло не так!", {
       reply_to_message_id: ctx.message.message_id,
     });
   }

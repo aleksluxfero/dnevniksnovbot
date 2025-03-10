@@ -83,7 +83,7 @@ bot.on("message:voice", async (ctx) => {
       async function getChatResponse(prompt: string) {
         let out = "";
         const stream = hf.chatCompletionStream({
-          model: "mistralai/Mixtral-8x7B-Instruct-v0.1",
+          model: "deepseek-ai/DeepSeek-R1",
           messages: [{ role: "user", content: prompt }],
           max_tokens: 500,
         });

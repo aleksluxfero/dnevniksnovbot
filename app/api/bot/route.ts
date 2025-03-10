@@ -64,7 +64,7 @@ bot.on("message:voice", async (ctx) => {
         Используй только существительные в единственном числе.
         Исключай числа и незначительные предметы.
         Оставляй только ключевые объекты, места, людей и явления.
-        Объединяй двойные слова в одно слово (например, "тетя Аня" → #тетяАня "газовая плита" → #газоваяПлита "черный крест" → #черныйКрест).
+        Объединяй двойные слова в одно слово (например, "тетя Аня" → #тетяАня "газовая плита" → #газоваяПлита "черный крест" → #черный).
         Имена собственные сохраняй с большой буквы, остальное — с маленькой.
         Верни ТОЛЬКО теги через пробел, каждый с #.
         Пример работы:
@@ -83,7 +83,7 @@ bot.on("message:voice", async (ctx) => {
       async function getChatResponse(prompt: string) {
         let out = "";
         const stream = hf.chatCompletionStream({
-          model: "deepseek-ai/DeepSeek-R1",
+          model: "mistralai/Mixtral-8x7B-Instruct-v0.1",
           messages: [{ role: "user", content: prompt }],
           max_tokens: 500,
         });
@@ -101,7 +101,7 @@ bot.on("message:voice", async (ctx) => {
       tags = response.trim();
     } catch (error) {
       console.error("Ошибка генерации тегов:", error);
-      tags = "#ошибка";
+      tags = "";
     }
 
     // Шаг 3: Форматирование результата

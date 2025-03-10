@@ -89,11 +89,17 @@ bot.on("message:voice", async (ctx) => {
 
     // Шаг 2: Генерация исправленного текста и тегов с Mixtral-8x7B
     let finalText = transcription.text;
+
     try {
       const prompt = `
-        Есть данный текст с описанием сновидения: ${transcription.text}.
-        
+        Есть исходный текст с описанием сновидения: ${transcription.text}.
+
         Нужно извлечь из него основные теги.
+
+        Вот пример:
+
+        Еду с батей на машине по лесу:
+        #батя #машина #лес
 
         Формат ответа должен быть таким и больше ничего лишнего:
         [Исходный текст].
@@ -105,19 +111,12 @@ bot.on("message:voice", async (ctx) => {
         prompt,
       );
 
-      const response = await hf.textGeneration({
-        model: "mistralai/Mixtral-8x7B-Instruct-v0.1",
-        inputs: prompt,
-        parameters: {
-          max_new_tokens: 300,
-          temperature: 0.7,
-        },
-      });
+      const response = await getChatResponse(prompt);
 
       console.log("Ответ от Mixtral-8x7B-Instruct:", response);
 
-      if (response && response.generated_text) {
-        finalText = response.generated_text;
+      if (response) {
+        finalText = response;
       } else {
         console.warn(
           "Ответ от Mixtral-8x7B-Instruct пустой, оставляем расшифровку",
@@ -141,5 +140,21 @@ bot.on("message:voice", async (ctx) => {
     });
   }
 });
+
+export async function getChatResponse(prompt: string) {
+  let out = "";
+  const stream = hf.chatCompletionStream({
+    model: "mistralai/Mixtral-8x7B-Instruct-v0.1",
+    messages: [{ role: "user", content: prompt }],
+    max_tokens: 500,
+  });
+  for await (const chunk of stream) {
+    if (chunk.choices && chunk.choices.length > 0) {
+      const newContent = chunk.choices[0].delta.content;
+      out += newContent;
+    }
+  }
+  return out;
+}
 
 export const POST = webhookCallback(bot, "std/http");

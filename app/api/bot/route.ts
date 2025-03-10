@@ -87,13 +87,13 @@ bot.on("message:voice", async (ctx) => {
       return;
     }
 
-    // Шаг 2: Генерация исправленного текста и тегов с zephyr-7b-beta
+    // Шаг 2: Генерация исправленного текста и тегов с Mixtral-8x7B
     let finalText = transcription.text;
     try {
       const prompt = `
         На основе следующего текста извлеки основные специфичные теги, исключая общие понятия вроде "сон", 
         а также исправь потенциально неправильную расшифровку аудиосообщения, например, если в сообщении 
-        написано слово "пухаеш", а на самом деле должно быть "бухаешь" При том не забывай что это всего лишь сон и не нужно критически относится к тексту, так как во сне может быть все что угодно. 
+        написано слово "пухаеш", а на самом деле должно быть "бухаешь". 
         
         Пример:
         Текст: "Приснилось, что я пегаю по болю с единорогом"
@@ -109,10 +109,13 @@ bot.on("message:voice", async (ctx) => {
         #тег1 #тег2 #тег3
       `;
 
-      console.log("Отправляем запрос к zephyr-7b-beta с промптом:", prompt);
+      console.log(
+        "Отправляем запрос к Mixtral-8x7B-Instruct с промптом:",
+        prompt,
+      );
 
       const response = await hf.textGeneration({
-        model: "HuggingFaceH4/zephyr-7b-beta",
+        model: "mistralai/Mixtral-8x7B-Instruct-v0.1",
         inputs: prompt,
         parameters: {
           max_new_tokens: 100,
@@ -120,15 +123,20 @@ bot.on("message:voice", async (ctx) => {
         },
       });
 
-      console.log("Ответ от zephyr-7b-beta:", response);
+      console.log("Ответ от Mixtral-8x7B-Instruct:", response);
 
       if (response && response.generated_text) {
         finalText = response.generated_text;
       } else {
-        console.warn("Ответ от zephyr-7b-beta пустой, оставляем расшифровку");
+        console.warn(
+          "Ответ от Mixtral-8x7B-Instruct пустой, оставляем расшифровку",
+        );
       }
     } catch (error) {
-      console.error("Ошибка генерации текста и тегов с zephyr-7b-beta:", error);
+      console.error(
+        "Ошибка генерации текста и тегов с Mixtral-8x7B-Instruct:",
+        error,
+      );
     }
 
     // Шаг 3: Отправка результата

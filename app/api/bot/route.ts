@@ -73,6 +73,8 @@ bot.on("message:voice", async (ctx) => {
 
 
         Обработай этот текст: "${transcription.text}"
+
+        Верни ТОЛЬКО теги через пробел, каждый с #.
       `;
 
       console.log(
@@ -83,7 +85,7 @@ bot.on("message:voice", async (ctx) => {
       async function getChatResponse(prompt: string) {
         let out = "";
         const stream = hf.chatCompletionStream({
-          model: "perplexity-ai/r1-1776",
+          model: "deepseek-ai/DeepSeek-R1",
           messages: [{ role: "user", content: prompt }],
           max_tokens: 500,
           provider: "fireworks-ai",

@@ -78,6 +78,7 @@ bot.on("message:voice", async (ctx) => {
         model: "openai/whisper-large-v3",
         data: audioBuffer,
       });
+      console.log("Расшифровка:", transcription.text);
     } catch (error) {
       console.error("Ошибка расшифровки аудио:", error);
       await ctx.reply("Не смог распознать голосовое сообщение!", {
@@ -86,13 +87,13 @@ bot.on("message:voice", async (ctx) => {
       return;
     }
 
-    // Шаг 2: Генерация исправленного текста и тегов
-    let finalText = transcription.text; // По умолчанию отправляем только расшифровку
+    // Шаг 2: Генерация исправленного текста и тегов с zephyr-7b-beta
+    let finalText = transcription.text;
     try {
       const prompt = `
         На основе следующего текста извлеки основные специфичные теги, исключая общие понятия вроде "сон", 
         а также исправь потенциально неправильную расшифровку аудиосообщения, например, если в сообщении 
-        написано слово "пухаеш", а на самом деле должно быть "бухаешь". Не забывай, что это всего лишь сон, поэтому не нужно критично относится к написанному тексту. 
+        написано слово "пухаеш", а на самом деле должно быть "бухаешь" При том не забывай что это всего лишь сон и не нужно критически относится к тексту, так как во сне может быть все что угодно. 
         
         Пример:
         Текст: "Приснилось, что я пегаю по болю с единорогом"
@@ -108,8 +109,10 @@ bot.on("message:voice", async (ctx) => {
         #тег1 #тег2 #тег3
       `;
 
-      const deepSeekResponse = await hf.textGeneration({
-        model: "deepseek-ai/DeepSeek-R1",
+      console.log("Отправляем запрос к zephyr-7b-beta с промптом:", prompt);
+
+      const response = await hf.textGeneration({
+        model: "HuggingFaceH4/zephyr-7b-beta",
         inputs: prompt,
         parameters: {
           max_new_tokens: 100,
@@ -117,10 +120,15 @@ bot.on("message:voice", async (ctx) => {
         },
       });
 
-      finalText = deepSeekResponse.generated_text; // Если成功, заменяем текст
+      console.log("Ответ от zephyr-7b-beta:", response);
+
+      if (response && response.generated_text) {
+        finalText = response.generated_text;
+      } else {
+        console.warn("Ответ от zephyr-7b-beta пустой, оставляем расшифровку");
+      }
     } catch (error) {
-      console.error("Ошибка генерации текста и тегов:", error);
-      // Здесь не отправляем ошибку пользователю, а просто оставляем расшифровку
+      console.error("Ошибка генерации текста и тегов с zephyr-7b-beta:", error);
     }
 
     // Шаг 3: Отправка результата

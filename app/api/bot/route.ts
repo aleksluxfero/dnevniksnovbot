@@ -83,7 +83,7 @@ bot.on("message:voice", async (ctx) => {
       async function getChatResponse(prompt: string) {
         let out = "";
         const stream = hf.chatCompletionStream({
-          model: "meta-llama/Llama-3.1-8B-Instruct",
+          model: "perplexity-ai/r1-1776",
           messages: [{ role: "user", content: prompt }],
           max_tokens: 500,
         });

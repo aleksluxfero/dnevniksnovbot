@@ -21,41 +21,9 @@ bot.command("start", async (ctx) => {
 
 bot.on("message:text", async (ctx) => {
   const chatId = ctx.chat.id;
-  // Отправляем сообщение обратно пользователю
   await ctx.reply(`Ваш чат ID: ${chatId}`);
 });
 
-// Обработка голосовых сообщений с Whisper
-/*bot.on("message:voice", async (ctx) => {
-  try {
-    const file = await ctx.getFile();
-    if (file.file_size && file.file_size > 5 * 1024 * 1024) {
-      await ctx.reply("Голосовое сообщение слишком большое (макс. 5 МБ)");
-      return;
-    }
-
-    const fileUrl = `https://api.telegram.org/file/bot${token}/${file.file_path}`;
-    const response = await fetch(fileUrl);
-    const audioBuffer = await response.arrayBuffer();
-
-    const transcription = await hf.automaticSpeechRecognition({
-      model: "openai/whisper-large-v3",
-      data: audioBuffer,
-    });
-
-    // Отвечаем на конкретное голосовое сообщение
-    await ctx.reply(transcription.text, {
-      reply_to_message_id: ctx.message.message_id,
-    });
-  } catch (error) {
-    console.error("Ошибка обработки голосового сообщения:", error);
-    await ctx.reply("Упс, не смог обработать голосовое сообщение!", {
-      reply_to_message_id: ctx.message.message_id,
-    });
-  }
-});*/
-
-// Обработка голосовых сообщений
 bot.on("message:voice", async (ctx) => {
   try {
     // Получение файла
@@ -87,20 +55,16 @@ bot.on("message:voice", async (ctx) => {
       return;
     }
 
-    // Шаг 2: Генерация исправленного текста и тегов с Mixtral-8x7B
-    let finalText = transcription.text;
-
+    // Шаг 2: Получение только тегов с Mixtral-8x7B
+    let tags = "";
     try {
       const prompt = `
-        Сейчас я тебе отправлю текст сновидения, извлеки из него основные теги. Вот пример как это нужно будет сделать: 
-        Текст сновидения: Еду с батей на машине по лесу:
-        Должны получится такие теги: #батя #машина #лес
-
-        Формат ответа должен быть примерно таким и больше ничего лишнего:
-        Еду с батей на машине по лесу.
-        #батя #машина #лес
-
-        Нужно обрабоать этот текст сновидения: ${transcription.text}.
+        Извлеки из текста основные теги. Верни ТОЛЬКО теги через пробел, каждый с #.
+        Пример:
+        Входной текст: "Еду с батей на машине по лесу"
+        Выход: "#батя #машина #лес"
+        
+        Обработай этот текст: "${transcription.text}"
       `;
 
       console.log(
@@ -125,25 +89,18 @@ bot.on("message:voice", async (ctx) => {
       }
 
       const response = await getChatResponse(prompt);
-
-      console.log("Ответ от Mixtral-8x7B-Instruct:", response);
-
-      if (response) {
-        finalText = response;
-      } else {
-        console.warn(
-          "Ответ от Mixtral-8x7B-Instruct пустой, оставляем расшифровку",
-        );
-      }
+      console.log("Ответ от Mixtral-8x7B-Instruct (теги):", response);
+      tags = response.trim();
     } catch (error) {
-      console.error(
-        "Ошибка генерации текста и тегов с Mixtral-8x7B-Instruct:",
-        error,
-      );
+      console.error("Ошибка генерации тегов:", error);
+      tags = "#ошибка";
     }
 
-    // Шаг 3: Отправка результата
-    await ctx.reply(finalText, {
+    // Шаг 3: Форматирование результата
+    const formattedResponse = `${transcription.text}.\n${tags}`;
+
+    // Шаг 4: Отправка результата
+    await ctx.reply(formattedResponse, {
       reply_to_message_id: ctx.message.message_id,
     });
   } catch (error) {

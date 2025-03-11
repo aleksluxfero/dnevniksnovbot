@@ -6,7 +6,7 @@ export const fetchCache = "force-no-store";
 import { Bot } from "grammy";
 import { HfInference } from "@huggingface/inference";
 
-const token = process.env.TELEGRAM_BOT_TOKEN;
+const token = process.env.TELEGRAM_BOT_TOKEN2;
 
 if (!token) {
   throw new Error("TELEGRAM_BOT_TOKEN environment variable not found.");
@@ -28,6 +28,8 @@ bot.on("message:text", async (ctx) => {
 
 // Обработка голосовых сообщений с Whisper
 bot.on("message:voice", async (ctx) => {
+  let fileUrl: string | undefined;
+
   try {
     // Этап 1: Получение информации о файле
     const file = await ctx.getFile();
@@ -35,14 +37,15 @@ bot.on("message:voice", async (ctx) => {
       throw new Error("Не удалось получить путь к файлу");
     }
 
+    // Формирование URL
+    fileUrl = `https://api.telegram.org/file/bot${token}/${file.file_path}`;
+
     // Этап 2: Проверка размера файла
     if (file.file_size && file.file_size > 15 * 1024 * 1024) {
-      await ctx.reply("Голосовое сообщение слишком большое (макс. 15 МБ)");
-      return;
+      throw new Error("Голосовое сообщение слишком большое (макс. 15 МБ)");
     }
 
-    // Этап 3: Формирование URL и загрузка файла
-    const fileUrl = `https://api.telegram.org/file/bot${token}/${file.file_path}`;
+    // Этап 3: Загрузка файла
     let response;
     try {
       response = await fetch(fileUrl);
@@ -75,25 +78,38 @@ bot.on("message:voice", async (ctx) => {
       throw new Error("Не удалось получить текст транскрипции");
     }
 
+    // Логирование успешной обработки
+    console.log("Успешная обработка голосового сообщения:", {
+      fileUrl,
+      transcription: transcription.text,
+      chatId: ctx.chat?.id,
+      messageId: ctx.message?.message_id,
+      fileSize: file.file_size,
+      timestamp: new Date().toISOString(),
+    });
+
     // Этап 6: Отправка ответа
     await ctx.reply(transcription.text, {
       reply_to_message_id: ctx.message.message_id,
     });
   } catch (error: unknown) {
-    // Детальная информация только в консоль
+    // Формирование сообщения об ошибке
     const errorMessage =
       error instanceof Error ? error.message : "Неизвестная ошибка";
 
-    console.error("Детальная ошибка обработки голосового сообщения:", {
+    // Логирование ошибки с полной информацией
+    console.error("Ошибка обработки голосового сообщения:", {
       message: errorMessage,
+      fileUrl,
       stack: error instanceof Error ? error.stack : undefined,
       ctx: {
         chatId: ctx.chat?.id,
         messageId: ctx.message?.message_id,
       },
+      timestamp: new Date().toISOString(),
     });
 
-    // Только общее сообщение в Telegram
+    // Отправка общего сообщения в Telegram без деталей
     await ctx.reply(
       "Упс, что-то пошло не так при обработке голосового сообщения!",
       {

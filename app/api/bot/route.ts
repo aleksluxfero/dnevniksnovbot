@@ -6,7 +6,7 @@ export const fetchCache = "force-no-store";
 import { Bot } from "grammy";
 import { HfInference } from "@huggingface/inference";
 
-const token = process.env.TELEGRAM_BOT_TOKEN2;
+const token = process.env.TELEGRAM_BOT_TOKEN;
 
 if (!token) {
   throw new Error("TELEGRAM_BOT_TOKEN environment variable not found.");

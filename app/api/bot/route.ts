@@ -21,17 +21,16 @@ bot.command("start", async (ctx) => {
 
 bot.on("message:text", async (ctx) => {
   const chatId = ctx.chat.id;
+  // Отправляем сообщение обратно пользователю
   await ctx.reply(`Ваш чат ID: ${chatId}`);
 });
 
+// Обработка голосовых сообщений с Whisper
 bot.on("message:voice", async (ctx) => {
   try {
-    // Получение файла
     const file = await ctx.getFile();
-    if (file.file_size && file.file_size > 10 * 1024 * 1024) {
-      await ctx.reply("Голосовое сообщение слишком большое (макс. 10 МБ)", {
-        reply_to_message_id: ctx.message.message_id,
-      });
+    if (file.file_size && file.file_size > 15 * 1024 * 1024) {
+      await ctx.reply("Голосовое сообщение слишком большое (макс. 15 МБ)");
       return;
     }
 
@@ -39,84 +38,18 @@ bot.on("message:voice", async (ctx) => {
     const response = await fetch(fileUrl);
     const audioBuffer = await response.arrayBuffer();
 
-    // Шаг 1: Расшифровка аудио
-    let transcription;
-    try {
-      transcription = await hf.automaticSpeechRecognition({
-        model: "openai/whisper-large-v3",
-        data: audioBuffer,
-      });
-      console.log("Расшифровка:", transcription.text);
-    } catch (error) {
-      console.error("Ошибка расшифровки аудио:", error);
-      await ctx.reply("Не смог распознать голосовое сообщение!", {
-        reply_to_message_id: ctx.message.message_id,
-      });
-      return;
-    }
+    const transcription = await hf.automaticSpeechRecognition({
+      model: "openai/whisper-large-v3",
+      data: audioBuffer,
+    });
 
-    // Шаг 2: Получение только тегов с Mixtral-8x7B
-    let tags = "";
-    try {
-      const prompt = `
-       Извлеки из текста только основные теги, следуя этим правилам:
-
-        Используй только существительные в единственном числе.
-        Исключай числа и незначительные предметы.
-        Оставляй только ключевые объекты, места, людей и явления.
-        Объединяй двойные слова в одно слово (например, "тетя Аня" → #тетяАня "газовая плита" → #газоваяПлита "черный крест" → #черный).
-        Имена собственные сохраняй с большой буквы, остальное — с маленькой.
-        Верни ТОЛЬКО теги через пробел, каждый с #.
-        Пример работы:
-        Текст: «Школа, решаем примеры, подсматриваю списываю, не могу понять цифры 212321. Вся моя писанина исчезла с фольги, но потом стала проявляться. Выходим из школы, Руслан на мопеде своем поехал, включил мигалки чтобы догнать другого пацана. Принесли направление в виде повестки, я начал рассказывать что это ничего страшного просто нужно дать показания.»
-        Результат: #школа #пример #фольга #Руслан #мопед #повестка #показание
-
-
-        Обработай этот текст: "${transcription.text}"
-
-        Верни ТОЛЬКО теги через пробел, каждый с #.
-      `;
-
-      console.log(
-        "Отправляем запрос к Mixtral-8x7B-Instruct с промптом:",
-        prompt,
-      );
-
-      async function getChatResponse(prompt: string) {
-        let out = "";
-        const stream = hf.chatCompletionStream({
-          model: "deepseek-ai/DeepSeek-R1",
-          messages: [{ role: "user", content: prompt }],
-          max_tokens: 15000,
-          provider: "fireworks-ai",
-        });
-        for await (const chunk of stream) {
-          if (chunk.choices && chunk.choices.length > 0) {
-            const newContent = chunk.choices[0].delta.content;
-            out += newContent;
-          }
-        }
-        return out;
-      }
-
-      const response = await getChatResponse(prompt);
-      console.log("Ответ от Mixtral-8x7B-Instruct (теги):", response);
-      tags = response.trim();
-    } catch (error) {
-      console.error("Ошибка генерации тегов:", error);
-      tags = "";
-    }
-
-    // Шаг 3: Форматирование результата
-    const formattedResponse = `${transcription.text}.\n${tags}`;
-
-    // Шаг 4: Отправка результата
-    await ctx.reply(formattedResponse, {
+    // Отвечаем на конкретное голосовое сообщение
+    await ctx.reply(transcription.text, {
       reply_to_message_id: ctx.message.message_id,
     });
   } catch (error) {
-    console.error("Общая ошибка обработки голосового сообщения:", error);
-    await ctx.reply("Упс, что-то пошло не так!", {
+    console.error("Ошибка обработки голосового сообщения:", error);
+    await ctx.reply("Упс, не смог обработать голосовое сообщение!", {
       reply_to_message_id: ctx.message.message_id,
     });
   }

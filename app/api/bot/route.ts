@@ -28,8 +28,8 @@ bot.on("message:voice", async (ctx) => {
   try {
     // Получение файла
     const file = await ctx.getFile();
-    if (file.file_size && file.file_size > 5 * 1024 * 1024) {
-      await ctx.reply("Голосовое сообщение слишком большое (макс. 5 МБ)", {
+    if (file.file_size && file.file_size > 10 * 1024 * 1024) {
+      await ctx.reply("Голосовое сообщение слишком большое (макс. 10 МБ)", {
         reply_to_message_id: ctx.message.message_id,
       });
       return;
@@ -87,7 +87,7 @@ bot.on("message:voice", async (ctx) => {
         const stream = hf.chatCompletionStream({
           model: "deepseek-ai/DeepSeek-R1",
           messages: [{ role: "user", content: prompt }],
-          max_tokens: 500,
+          max_tokens: 15000,
           provider: "fireworks-ai",
         });
         for await (const chunk of stream) {

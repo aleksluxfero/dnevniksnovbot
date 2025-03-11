@@ -17,13 +17,13 @@ const hf = new HfInference(process.env.HUGGINGFACE_API_TOKEN2 || "");
 
 bot.command("start", async (ctx) => {
   await ctx.reply(
-    "Привет! Я ваш новый бот на грамми, написанный на TypeScript!",
+    "Привет. Я превращаю ваши аудиосообщения в текст! Просто отправьте мне голосовое сообщение, и я быстро расшифрую его для вас. Удобно для заметок, переписки или когда лень печатать. Поддерживаю разные языки — попробуйте прямо сейчас!",
   );
 });
 
 bot.on("message:text", async (ctx) => {
   const chatId = ctx.chat.id;
-  await ctx.reply(`Ваш чат ID: ${chatId}`);
+  //await ctx.reply(`Ваш чат ID: ${chatId}`);
 });
 
 // Обработка голосовых сообщений с Whisper

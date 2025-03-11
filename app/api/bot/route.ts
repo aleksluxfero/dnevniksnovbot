@@ -52,7 +52,6 @@ bot.on("message:voice", async (ctx) => {
         );
       }
     } catch (fetchError: unknown) {
-      // Приведение типа для fetchError
       const errorMessage =
         fetchError instanceof Error
           ? fetchError.message
@@ -81,7 +80,7 @@ bot.on("message:voice", async (ctx) => {
       reply_to_message_id: ctx.message.message_id,
     });
   } catch (error: unknown) {
-    // Приведение типа для общей ошибки
+    // Детальная информация только в консоль
     const errorMessage =
       error instanceof Error ? error.message : "Неизвестная ошибка";
 
@@ -94,9 +93,13 @@ bot.on("message:voice", async (ctx) => {
       },
     });
 
-    await ctx.reply(`Ошибка: ${errorMessage}`, {
-      reply_to_message_id: ctx.message.message_id,
-    });
+    // Только общее сообщение в Telegram
+    await ctx.reply(
+      "Упс, что-то пошло не так при обработке голосового сообщения!",
+      {
+        reply_to_message_id: ctx.message.message_id,
+      },
+    );
   }
 });
 

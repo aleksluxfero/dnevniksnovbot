@@ -50,6 +50,7 @@ bot.on("message:voice", async (ctx) => {
     const transcription = await hf.automaticSpeechRecognition({
       model: "openai/whisper-large-v3",
       data: audioBuffer,
+      return_timestamps: true, // Добавляем поддержку длинных аудио
     });
 
     if (!transcription.text) throw new Error("Не удалось получить текст");

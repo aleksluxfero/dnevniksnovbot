@@ -29,7 +29,7 @@ bot.on("message:voice", async (ctx) => {
   if (ctx.chat.id !== ALLOWED_CHAT_ID) {
     console.log("Сообщение вне разрешённой группы:", ctx.chat.id);
     return; // Молча игнорируем, если не та группа
-  }
+  } 
 
   let fileUrl: string | undefined;
   try {
@@ -48,9 +48,8 @@ bot.on("message:voice", async (ctx) => {
     if (!audioBuffer.byteLength) throw new Error("Получен пустой аудио буфер");
 
     const transcription = await hf.automaticSpeechRecognition({
-      model: "openai/whisper-large-v3",
+      model: "openai/whisper-large-v3-turbo",
       data: audioBuffer,
-      return_timestamps: true, // Добавляем поддержку длинных аудио
     });
 
     if (!transcription.text) throw new Error("Не удалось получить текст");
